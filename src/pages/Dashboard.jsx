@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import siiApi from "../api/siiApi";
 import Navbar from "../components/Navbar";
+import "../styles/dashboard.css";
 
 function Dashboard() {
   const [student, setStudent] = useState(null);
@@ -11,9 +13,6 @@ function Dashboard() {
     const fetchStudent = async () => {
       try {
         const response = await siiApi.get("/movil/estudiante");
-
-        console.log("RESPUESTA ESTUDIANTE:", response.data);
-
         setStudent(response.data.data);
       } catch (err) {
         console.log("ERROR:", err.response?.data || err.message);
@@ -28,56 +27,135 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div>
+      <div className="dashboard-page">
         <Navbar />
-        <h2>Cargando información...</h2>
+        <div className="loader">Cargando información académica...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div>
+      <div className="dashboard-page">
         <Navbar />
-        <h2>{error}</h2>
+        <div className="error-box">{error}</div>
       </div>
     );
   }
 
+  const promedio = Number(student.promedio_ponderado).toFixed(2);
+  const avance = Number(student.porcentaje_avance || 0);
+
   return (
-    <div>
+    <div className="dashboard-page">
       <Navbar />
 
-      <h1>Dashboard del estudiante</h1>
+      <main className="dashboard-container">
+        <section className="hero-card">
+          <div className="hero-info">
+            <span className="hero-badge">Portal Académico</span>
+            <h1>Bienvenida, Carolina</h1>
+            <p>
+              Aquí puedes consultar tu información académica, avance de carrera,
+              calificaciones, kardex y horario en un solo lugar.
+            </p>
 
-      <p>
-        <strong>Nombre:</strong> {student.persona}
-      </p>
+            <div className="hero-actions">
+              <Link to="/calificaciones">Ver calificaciones</Link>
+              <Link to="/horario" className="secondary-btn">Ver horario</Link>
+            </div>
+          </div>
 
-      <p>
-        <strong>No. Control:</strong> {student.numero_control}
-      </p>
+          <div className="student-card">
+            {student.foto ? (
+              <img
+                src={`data:image/jpeg;base64,${student.foto}`}
+                alt="Foto del estudiante"
+              />
+            ) : (
+              <div className="avatar-placeholder">🎓</div>
+            )}
 
-      <p>
-        <strong>Correo:</strong> {student.email}
-      </p>
+            <h2>{student.persona}</h2>
+            <p>{student.numero_control}</p>
+            <span>{student.email}</span>
+          </div>
+        </section>
 
-      <p>
-        <strong>Semestre:</strong> {student.semestre}
-      </p>
+        <section className="stats-grid">
+          <div className="stat-card blue">
+            <span>Semestre</span>
+            <h3>{student.semestre}</h3>
+            <p>Semestre actual registrado</p>
+          </div>
 
-      <p>
-        <strong>Créditos acumulados:</strong> {student.creditos_acumulados}
-      </p>
+          <div className="stat-card green">
+            <span>Promedio</span>
+            <h3>{promedio}</h3>
+            <p>Promedio ponderado</p>
+          </div>
 
-      <p>
-        <strong>Promedio ponderado:</strong>{" "}
-        {Number(student.promedio_ponderado).toFixed(2)}
-      </p>
+          <div className="stat-card purple">
+            <span>Créditos</span>
+            <h3>{student.creditos_acumulados}</h3>
+            <p>Créditos acumulados</p>
+          </div>
 
-      <p>
-        <strong>Avance de carrera:</strong> {student.porcentaje_avance}%
-      </p>
+          <div className="stat-card orange">
+            <span>Materias</span>
+            <h3>{student.materias_aprobadas}</h3>
+            <p>Materias aprobadas</p>
+          </div>
+        </section>
+
+        <section className="content-grid">
+          <div className="progress-card">
+            <div className="section-title">
+              <h2>Avance académico</h2>
+              <span>{avance}%</span>
+            </div>
+
+            <div className="progress-bar">
+              <div style={{ width: `${avance}%` }}></div>
+            </div>
+
+            <div className="progress-details">
+              <p>
+                <strong>Materias cursadas:</strong> {student.materias_cursadas}
+              </p>
+              <p>
+                <strong>Materias aprobadas:</strong> {student.materias_aprobadas}
+              </p>
+              <p>
+                <strong>Materias reprobadas:</strong>{" "}
+                {student.materias_reprobadas}
+              </p>
+            </div>
+          </div>
+
+          <div className="quick-card">
+            <h2>Accesos rápidos</h2>
+
+            <Link to="/calificaciones" className="quick-item">
+              <div>📊</div>
+              <span>Calificaciones</span>
+              <small>Consulta tus unidades y promedio</small>
+            </Link>
+
+            <Link to="/kardex" className="quick-item">
+              <div>📚</div>
+              <span>Kardex</span>
+              <small>Historial académico completo</small>
+            </Link>
+
+            <Link to="/horario" className="quick-item">
+              <div>🗓️</div>
+              <span>Horario</span>
+              <small>Clases organizadas por día</small>
+            </Link>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

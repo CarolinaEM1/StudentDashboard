@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import siiApi from "../api/siiApi";
 import Navbar from "../components/Navbar";
+import "../styles/calificaciones.css";
 
 function Calificaciones() {
   const [calificaciones, setCalificaciones] = useState([]);
@@ -27,14 +28,10 @@ function Calificaciones() {
     const fetchCalificaciones = async () => {
       try {
         const response = await siiApi.get("/movil/estudiante/calificaciones");
-
-        console.log("RESPUESTA CALIFICACIONES:", response.data);
-
         const arreglo = buscarArregloCalificaciones(response.data);
 
         if (!arreglo) {
           setError("No se encontró el arreglo de calificaciones.");
-          setCalificaciones([]);
           return;
         }
 
@@ -61,13 +58,22 @@ function Calificaciones() {
     return (suma / validas.length).toFixed(1);
   };
 
-  const getColor = (promedio) => {
+  const getEstado = (promedio) => {
     const cal = Number(promedio);
 
-    if (isNaN(cal)) return "gray";
-    if (cal >= 90) return "green";
-    if (cal >= 70) return "orange";
-    return "red";
+    if (isNaN(cal)) return "Pendiente";
+    if (cal >= 90) return "Excelente";
+    if (cal >= 70) return "Aprobado";
+    return "Riesgo";
+  };
+
+  const getBadgeClass = (promedio) => {
+    const cal = Number(promedio);
+
+    if (isNaN(cal)) return "badge pending";
+    if (cal >= 90) return "badge excellent";
+    if (cal >= 70) return "badge approved";
+    return "badge risk";
   };
 
   const filtradas = calificaciones.filter((item) => {
@@ -82,73 +88,162 @@ function Calificaciones() {
     );
   });
 
+  const materiasConPromedio = calificaciones.map((item) =>
+    getPromedio(item.calificaiones || item.calificaciones || [])
+  );
+
+  const promediosValidos = materiasConPromedio
+    .map(Number)
+    .filter((num) => !isNaN(num));
+
+  const promedioGeneral =
+    promediosValidos.length > 0
+      ? (
+          promediosValidos.reduce((acc, num) => acc + num, 0) /
+          promediosValidos.length
+        ).toFixed(1)
+      : "N/A";
+
+  const materiasRiesgo = promediosValidos.filter((num) => num < 70).length;
+
   if (loading) {
     return (
-      <div>
+      <div className="grades-page">
         <Navbar />
-        <h2>Cargando calificaciones...</h2>
+        <div className="grades-loader">Cargando calificaciones...</div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="grades-page">
       <Navbar />
 
-      <h1>Calificaciones</h1>
+      <main className="grades-container">
+        <section className="grades-hero">
+          <div>
+            <span className="grades-badge">Seguimiento académico</span>
+            <h1>Calificaciones</h1>
+            <p>
+              Consulta tus materias, calificaciones por unidad y desempeño
+              general del semestre.
+            </p>
+          </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+          <div className="grades-summary-card">
+            <span>Promedio general</span>
+            <h2>{promedioGeneral}</h2>
+            <p>Calculado con las materias calificadas</p>
+          </div>
+        </section>
 
-      <input
-        type="text"
-        placeholder="Buscar por materia, clave o grupo..."
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-      />
+        <section className="grades-stats">
+          <div className="grade-stat-card">
+            <span>Total de materias</span>
+            <h3>{calificaciones.length}</h3>
+            <p>Materias registradas</p>
+          </div>
 
-      <table border="1" cellPadding="10" style={{ marginTop: "20px" }}>
-        <thead>
-          <tr>
-            <th>Materia</th>
-            <th>Clave</th>
-            <th>Grupo</th>
-            <th>Unidad 1</th>
-            <th>Unidad 2</th>
-            <th>Unidad 3</th>
-            <th>Unidad 4</th>
-            <th>Promedio</th>
-          </tr>
-        </thead>
+          <div className="grade-stat-card">
+            <span>Evaluadas</span>
+            <h3>{promediosValidos.length}</h3>
+            <p>Con al menos una calificación</p>
+          </div>
 
-        <tbody>
-          {filtradas.map((item, index) => {
-            const listaCalificaciones =
-              item.calificaiones || item.calificaciones || [];
+          <div className="grade-stat-card danger">
+            <span>En riesgo</span>
+            <h3>{materiasRiesgo}</h3>
+            <p>Promedio menor a 70</p>
+          </div>
+        </section>
 
-            const promedio = getPromedio(listaCalificaciones);
+        <section className="grades-panel">
+          <div className="grades-toolbar">
+            <div>
+              <h2>Detalle por materia</h2>
+              <p>Busca por nombre, clave o grupo.</p>
+            </div>
 
-            return (
-              <tr key={index}>
-                <td>{item.materia?.nombre_materia || "No disponible"}</td>
-                <td>{item.materia?.clave_materia || "No disponible"}</td>
-                <td>{item.materia?.letra_grupo || "No disponible"}</td>
+            <input
+              type="text"
+              placeholder="Buscar materia..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
 
-                {[0, 1, 2, 3].map((i) => (
-                  <td key={i}>
-                    {listaCalificaciones[i]?.calificacion ?? "Pendiente"}
-                  </td>
-                ))}
+          {error && <div className="grades-error">{error}</div>}
 
-                <td style={{ color: getColor(promedio), fontWeight: "bold" }}>
-                  {promedio}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+          <div className="grades-table-wrapper">
+            <table className="grades-table">
+              <thead>
+                <tr>
+                  <th>Materia</th>
+                  <th>Grupo</th>
+                  <th>Unidad 1</th>
+                  <th>Unidad 2</th>
+                  <th>Unidad 3</th>
+                  <th>Unidad 4</th>
+                  <th>Promedio</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
 
-      {filtradas.length === 0 && <p>No se encontraron materias.</p>}
+              <tbody>
+                {filtradas.map((item, index) => {
+                  const lista =
+                    item.calificaiones || item.calificaciones || [];
+
+                  const promedio = getPromedio(lista);
+
+                  return (
+                    <tr key={index}>
+                      <td>
+                        <strong>{item.materia?.nombre_materia}</strong>
+                        <small>{item.materia?.clave_materia}</small>
+                      </td>
+
+                      <td>
+                        <span className="group-pill">
+                          {item.materia?.letra_grupo || "N/A"}
+                        </span>
+                      </td>
+
+                      {[0, 1, 2, 3].map((i) => (
+                        <td key={i}>
+                          <span
+                            className={
+                              lista[i]?.calificacion
+                                ? "unit-grade"
+                                : "unit-pending"
+                            }
+                          >
+                            {lista[i]?.calificacion ?? "Pendiente"}
+                          </span>
+                        </td>
+                      ))}
+
+                      <td>
+                        <strong className="average-text">{promedio}</strong>
+                      </td>
+
+                      <td>
+                        <span className={getBadgeClass(promedio)}>
+                          {getEstado(promedio)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {filtradas.length === 0 && (
+            <p className="no-results">No se encontraron materias.</p>
+          )}
+        </section>
+      </main>
     </div>
   );
 }
