@@ -7,17 +7,32 @@ function Horario() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const buscarArreglo = (obj) => {
-    if (Array.isArray(obj)) return obj;
-
-    if (typeof obj === "object" && obj !== null) {
-      for (const key in obj) {
-        const resultado = buscarArreglo(obj[key]);
-        if (resultado.length) return resultado;
+  const buscarArregloHorario = (obj) => {
+    if (Array.isArray(obj)) {
+      if (
+        obj.length > 0 &&
+        obj[0]?.nombre_materia &&
+        (
+          "lunes" in obj[0] ||
+          "martes" in obj[0] ||
+          "miercoles" in obj[0] ||
+          "jueves" in obj[0] ||
+          "viernes" in obj[0] ||
+          "sabado" in obj[0]
+        )
+      ) {
+        return obj;
       }
     }
 
-    return [];
+    if (typeof obj === "object" && obj !== null) {
+      for (const key in obj) {
+        const resultado = buscarArregloHorario(obj[key]);
+        if (resultado) return resultado;
+      }
+    }
+
+    return null;
   };
 
   useEffect(() => {
@@ -27,7 +42,14 @@ function Horario() {
 
         console.log("RESPUESTA HORARIO:", response.data);
 
-        const arreglo = buscarArreglo(response.data);
+        const arreglo = buscarArregloHorario(response.data);
+
+        if (!arreglo) {
+          setError("No se encontró el horario.");
+          setHorario([]);
+          return;
+        }
+
         setHorario(arreglo);
       } catch (err) {
         console.log("ERROR HORARIO:", err.response?.data || err.message);
@@ -39,6 +61,18 @@ function Horario() {
 
     fetchHorario();
   }, []);
+
+  const mostrarClase = (hora, salon) => {
+    if (!hora) return "Sin clase";
+
+    return (
+      <>
+        <strong>{hora}</strong>
+        <br />
+        <small>{salon || "Sin salón"}</small>
+      </>
+    );
+  };
 
   if (loading) {
     return (
@@ -82,41 +116,12 @@ function Horario() {
 
               <td>{item.letra_grupo}</td>
 
-              <td>
-                {item.lunes || "Sin clase"}
-                <br />
-                <small>{item.lunes_clave_salon || ""}</small>
-              </td>
-
-              <td>
-                {item.martes || "Sin clase"}
-                <br />
-                <small>{item.martes_clave_salon || ""}</small>
-              </td>
-
-              <td>
-                {item.miercoles || "Sin clase"}
-                <br />
-                <small>{item.miercoles_clave_salon || ""}</small>
-              </td>
-
-              <td>
-                {item.jueves || "Sin clase"}
-                <br />
-                <small>{item.jueves_clave_salon || ""}</small>
-              </td>
-
-              <td>
-                {item.viernes || "Sin clase"}
-                <br />
-                <small>{item.viernes_clave_salon || ""}</small>
-              </td>
-
-              <td>
-                {item.sabado || "Sin clase"}
-                <br />
-                <small>{item.sabado_clave_salon || ""}</small>
-              </td>
+              <td>{mostrarClase(item.lunes, item.lunes_clave_salon)}</td>
+              <td>{mostrarClase(item.martes, item.martes_clave_salon)}</td>
+              <td>{mostrarClase(item.miercoles, item.miercoles_clave_salon)}</td>
+              <td>{mostrarClase(item.jueves, item.jueves_clave_salon)}</td>
+              <td>{mostrarClase(item.viernes, item.viernes_clave_salon)}</td>
+              <td>{mostrarClase(item.sabado, item.sabado_clave_salon)}</td>
             </tr>
           ))}
         </tbody>
