@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import "../styles/navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -9,13 +10,26 @@ function Navbar() {
   };
 
   return (
-    <nav>
-      <Link to="/dashboard">Inicio</Link>{" | "}
-      <Link to="/calificaciones">Calificaciones</Link>{" | "}
-      <Link to="/kardex">Kardex</Link>{" | "}
-      <Link to="/horario">Horario</Link>{" | "}
-      <button onClick={logout}>Cerrar sesión</button>
-    </nav>
+    <header className="navbar">
+      <div className="navbar-brand">
+        <div className="navbar-logo">🎓</div>
+        <div>
+          <h2>SII ITC</h2>
+          <span>Student Portal</span>
+        </div>
+      </div>
+
+      <nav className="navbar-links">
+        <NavLink to="/dashboard">Inicio</NavLink>
+        <NavLink to="/calificaciones">Calificaciones</NavLink>
+        <NavLink to="/kardex">Kardex</NavLink>
+        <NavLink to="/horario">Horario</NavLink>
+      </nav>
+
+      <button className="logout-btn" onClick={logout}>
+        Cerrar sesión
+      </button>
+    </header>
   );
 }
 
