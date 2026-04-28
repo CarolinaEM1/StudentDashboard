@@ -8,11 +8,19 @@ function Calificaciones() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const getValue = (obj, keys) => {
-    for (let key of keys) {
-      if (obj?.[key] !== undefined && obj?.[key] !== null) return obj[key];
+  const buscarArregloCalificaciones = (obj) => {
+    if (Array.isArray(obj)) {
+      if (obj.length > 0 && obj[0]?.materia) return obj;
     }
-    return "No disponible";
+
+    if (typeof obj === "object" && obj !== null) {
+      for (const key in obj) {
+        const resultado = buscarArregloCalificaciones(obj[key]);
+        if (resultado) return resultado;
+      }
+    }
+
+    return null;
   };
 
   useEffect(() => {
@@ -22,14 +30,15 @@ function Calificaciones() {
 
         console.log("RESPUESTA CALIFICACIONES:", response.data);
 
-        const data =
-          response.data?.message?.calificaciones ||
-          response.data?.calificaciones ||
-          response.data?.data ||
-          response.data?.message ||
-          response.data;
+        const arreglo = buscarArregloCalificaciones(response.data);
 
-        setCalificaciones(Array.isArray(data) ? data : []);
+        if (!arreglo) {
+          setError("No se encontró el arreglo de calificaciones.");
+          setCalificaciones([]);
+          return;
+        }
+
+        setCalificaciones(arreglo);
       } catch (err) {
         console.log("ERROR CALIFICACIONES:", err.response?.data || err.message);
         setError("No se pudieron cargar las calificaciones.");
@@ -41,28 +50,37 @@ function Calificaciones() {
     fetchCalificaciones();
   }, []);
 
-  const filtradas = calificaciones.filter((item) => {
-    const materia = String(
-      getValue(item, ["materia", "nombre_materia", "asignatura", "nombre"])
-    ).toLowerCase();
+  const getPromedio = (lista) => {
+    const validas = lista
+      ?.map((item) => Number(item.calificacion))
+      .filter((cal) => !isNaN(cal));
 
-    const periodo = String(
-      getValue(item, ["periodo", "periodo_academico", "Periodo"])
-    ).toLowerCase();
+    if (!validas || validas.length === 0) return "Sin calificar";
 
-    return (
-      materia.includes(busqueda.toLowerCase()) ||
-      periodo.includes(busqueda.toLowerCase())
-    );
-  });
+    const suma = validas.reduce((acc, cal) => acc + cal, 0);
+    return (suma / validas.length).toFixed(1);
+  };
 
-  const getColor = (calificacion) => {
-    const cal = Number(calificacion);
+  const getColor = (promedio) => {
+    const cal = Number(promedio);
 
+    if (isNaN(cal)) return "gray";
     if (cal >= 90) return "green";
     if (cal >= 70) return "orange";
     return "red";
   };
+
+  const filtradas = calificaciones.filter((item) => {
+    const nombre = item.materia?.nombre_materia?.toLowerCase() || "";
+    const clave = item.materia?.clave_materia?.toLowerCase() || "";
+    const grupo = item.materia?.letra_grupo?.toLowerCase() || "";
+
+    return (
+      nombre.includes(busqueda.toLowerCase()) ||
+      clave.includes(busqueda.toLowerCase()) ||
+      grupo.includes(busqueda.toLowerCase())
+    );
+  });
 
   if (loading) {
     return (
@@ -73,24 +91,17 @@ function Calificaciones() {
     );
   }
 
-  if (error) {
-    return (
-      <div>
-        <Navbar />
-        <h2>{error}</h2>
-      </div>
-    );
-  }
-
   return (
     <div>
       <Navbar />
 
       <h1>Calificaciones</h1>
 
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
       <input
         type="text"
-        placeholder="Buscar por materia o periodo..."
+        placeholder="Buscar por materia, clave o grupo..."
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
       />
@@ -99,39 +110,37 @@ function Calificaciones() {
         <thead>
           <tr>
             <th>Materia</th>
-            <th>Periodo</th>
-            <th>Calificación final</th>
+            <th>Clave</th>
+            <th>Grupo</th>
+            <th>Unidad 1</th>
+            <th>Unidad 2</th>
+            <th>Unidad 3</th>
+            <th>Unidad 4</th>
+            <th>Promedio</th>
           </tr>
         </thead>
 
         <tbody>
           {filtradas.map((item, index) => {
-            const materia = getValue(item, [
-              "materia",
-              "nombre_materia",
-              "asignatura",
-              "nombre",
-            ]);
+            const listaCalificaciones =
+              item.calificaiones || item.calificaciones || [];
 
-            const periodo = getValue(item, [
-              "periodo",
-              "periodo_academico",
-              "Periodo",
-            ]);
-
-            const calificacion = getValue(item, [
-              "calificacion",
-              "calificacion_final",
-              "final",
-              "promedio",
-            ]);
+            const promedio = getPromedio(listaCalificaciones);
 
             return (
               <tr key={index}>
-                <td>{materia}</td>
-                <td>{periodo}</td>
-                <td style={{ color: getColor(calificacion), fontWeight: "bold" }}>
-                  {calificacion}
+                <td>{item.materia?.nombre_materia || "No disponible"}</td>
+                <td>{item.materia?.clave_materia || "No disponible"}</td>
+                <td>{item.materia?.letra_grupo || "No disponible"}</td>
+
+                {[0, 1, 2, 3].map((i) => (
+                  <td key={i}>
+                    {listaCalificaciones[i]?.calificacion ?? "Pendiente"}
+                  </td>
+                ))}
+
+                <td style={{ color: getColor(promedio), fontWeight: "bold" }}>
+                  {promedio}
                 </td>
               </tr>
             );
@@ -139,7 +148,7 @@ function Calificaciones() {
         </tbody>
       </table>
 
-      {filtradas.length === 0 && <p>No se encontraron calificaciones.</p>}
+      {filtradas.length === 0 && <p>No se encontraron materias.</p>}
     </div>
   );
 }
