@@ -24,6 +24,8 @@ function Navbar() {
         <NavLink to="/calificaciones">Calificaciones</NavLink>
         <NavLink to="/kardex">Kardex</NavLink>
         <NavLink to="/horario">Horario</NavLink>
+        <NavLink to="/avisos">Avisos</NavLink>
+        <NavLink to="/admin-avisos">Admin</NavLink>
       </nav>
 
       <button className="logout-btn" onClick={logout}>

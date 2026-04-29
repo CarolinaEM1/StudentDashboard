@@ -4,6 +4,8 @@ import Dashboard from "./pages/Dashboard";
 import Calificaciones from "./pages/Calificaciones";
 import Kardex from "./pages/Kardex";
 import Horario from "./pages/Horario";
+import Avisos from "./pages/Avisos";
+import AdminAvisos from "./pages/AdminAvisos";
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -53,6 +55,23 @@ function App() {
           element={
             <PrivateRoute>
               <Horario />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/avisos"
+          element={
+            <PrivateRoute>
+              <Avisos />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/admin-avisos"
+          element={
+            <PrivateRoute>
+              <AdminAvisos />
             </PrivateRoute>
           }
         />
